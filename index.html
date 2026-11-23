@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>현화스너 생산·후가공 입고관리</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-light: #eff6ff;
+      --accent: #059669;
+      --accent-light: #ecfdf5;
+      --warn: #d97706;
+      --warn-light: #fffbeb;
+      --danger: #dc2626;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 60px; }
+    
+    /* 헤더 */
+    header {
+      background: var(--primary); color: #fff; padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-actions { display: flex; gap: 8px; }
+    .btn-header {
+      background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-header:hover { background: rgba(255,255,255,0.3); }
+
+    /* 레이아웃 컨테이너 */
+    .container { max-width: 1200px; margin: 16px auto; padding: 0 14px; }
+    
+    /* 상단 요약 및 필터 바 */
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;
+      background: var(--card); padding: 12px 16px; border-radius: 10px;
+      border: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border);
+      background: #fff; color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-add-main {
+      background: var(--primary); color: #fff; border: none; padding: 9px 16px;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-add-main:hover { background: #1d4ed8; }
+
+    /* PC 2단 그리드 / 모바일 1단 */
+    .main-grid {
+      display: grid; grid-template-columns: 1fr 1.15fr; gap: 16px; align-items: start;
+    }
+    @media (max-width: 860px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 모체(생산발주) 카드 리스트 */
+    .panel {
+      background: var(--card); border-radius: 12px; border: 1px solid var(--border);
+      padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .panel-title {
+      font-size: 15px; font-weight: 700; margin: 0 0 12px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;
+    }
+
+    .parent-card {
+      border: 1.5px solid var(--border); border-radius: 10px; padding: 14px;
+      margin-bottom: 10px; cursor: pointer; transition: all 0.15s; background: #fff;
+    }
+    .parent-card:hover { border-color: #93c5fd; }
+    .parent-card.selected {
+      border-color: var(--primary); background: var(--primary-light);
+      box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.15);
+    }
+    .p-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .p-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .p-spec {
+      display: inline-block; background: #e2e8f0; color: #1e293b;
+      padding: 2px 8px; border-radius: 5px; font-size: 13px; font-weight: 700; margin-left: 6px;
+    }
+    .p-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+    /* 게이지 바 */
+    .progress-wrap { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+    .progress-bar { height: 100%; background: var(--primary); transition: width 0.3s; }
+    .progress-bar.done { background: var(--accent); }
+
+    .p-stats {
+      display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;
+    }
+    .stat-rem { color: var(--warn); font-weight: 700; }
+    .stat-rem.zero { color: var(--accent); }
+
+    /* 우측(하단) 후가공 분할 상세 영역 */
+    .detail-header {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 12px; margin-bottom: 14px;
+    }
+    .detail-header h3 { margin: 0 0 4px 0; font-size: 16px; }
+    .detail-sub { font-size: 13px; color: var(--muted); }
+
+    .btn-split {
+      width: 100%; background: var(--accent); color: #fff; border: none;
+      padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 700;
+      cursor: pointer; margin-bottom: 14px;
+    }
+    .btn-split:hover { background: #047857; }
+    .btn-split:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* 분할 자식 아이템 카드 (모바일 터치 최적화) */
+    .child-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+      margin-bottom: 9px; background: #fff; transition: background 0.15s;
+    }
+    .child-item.checked {
+      background: var(--accent-light); border-color: #6ee7b7;
+    }
+    .c-info { flex: 1; }
+    .c-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .badge-plating {
+      background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px;
+      font-size: 13px; font-weight: 700;
+    }
+    .badge-washer {
+      background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px;
+      font-size: 13px; font-weight: 700;
+    }
+    .c-kg { font-size: 16px; font-weight: 800; color: var(--text); }
+    .c-meta { font-size: 12px; color: var(--muted); }
+
+    /* 원터치 입고 체크 버튼 */
+    .check-btn {
+      min-width: 96px; height: 44px; border-radius: 8px; border: 2px solid var(--border);
+      background: #fff; color: var(--text); font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.15s;
+    }
+    .check-btn.done {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+
+    /* 모달 창 */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+      z-index: 200; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff; width: 100%; max-width: 440px; border-radius: 14px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal h2 { margin: 0 0 14px 0; font-size: 18px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #334155; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px;
+    }
+    /* 프리셋 버튼 그리드 */
+    .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+    .preset-btn {
+      padding: 8px 4px; border: 1px solid var(--border); border-radius: 6px;
+      background: #f8fafc; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .preset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+    .btn-cancel {
+      flex: 1; padding: 11px; border: 1px solid var(--border); background: #fff;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .btn-submit {
+      flex: 1.5; padding: 11px; border: none; background: var(--primary); color: #fff;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+
+    /* 로딩 오버레이 */
+    .loading {
+      position: fixed; bottom: 16px; right: 16px; background: #1e293b; color: #fff;
+      padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      display: none; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .empty-msg { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>현화스너 생산·후가공 입고관리</h1>
+  <div class="header-actions">
+    <button class="btn-header" onclick="loadData()">↻ 새로고침</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- 상단 필터 및 신규 발주 버튼 -->
+  <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" onclick="setFilter('all', this)">전체 보기</button>
+      <button class="filter-btn" onclick="setFilter('rem', this)">잔량 남음</button>
+      <button class="filter-btn" onclick="setFilter('unreceived', this)">미입고 있음</button>
+    </div>
+    <button class="btn-add-main" onclick="openParentModal()">+ 공장 생산발주 등록</button>
+  </div>
+
+  <!-- 메인 2단 화면 -->
+  <div class="main-grid">
+    <!-- 좌측: 모체 생산발주 목록 -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>1. 공장 생산발주 (원소재/반제품)</span>
+        <span id="parentCount" style="color:var(--primary); font-size:13px;">0건</span>
+      </div>
+      <div id="parentList">
+        <div class="empty-msg">데이터를 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- 우측: 선택된 발주의 후가공 배분 및 입고체크 -->
+    <div class="panel">
+      <div class="panel-title">
+        <span>2. 후가공 분할 배분 & 입고체크</span>
+      </div>
+      <div id="detailArea">
+        <div class="empty-msg">왼쪽에서 품목을 선택하면<br>도금·조립 배분 내역과 입고 체크가 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 1: 공장 생산발주(모체) 등록 -->
+<div class="modal-backdrop" id="parentModal">
+  <div class="modal">
+    <h2>공장 생산발주 등록</h2>
+    <div class="form-group">
+      <label>발주일</label>
+      <input type="date" id="pDate" />
+    </div>
+    <div class="form-group">
+      <label>품목명 (재질/종류)</label>
+      <input type="text" id="pItem" placeholder="예: SCM 유두렌지(12.9)" />
+    </div>
+    <div class="form-group">
+      <label>규격 (호칭×길이)</label>
+      <input type="text" id="pSpec" placeholder="예: 3*10 또는 M4*12" />
+    </div>
+    <div class="form-group">
+      <label>총 발주 중량 (kg)</label>
+      <input type="number" id="pKg" placeholder="예: 1000" inputmode="numeric" />
+    </div>
+    <div class="form-group">
+      <label>비고 (선택)</label>
+      <input type="text" id="pNote" placeholder="공장명 또는 메모" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('parentModal')">취소</button>
+      <button class="btn-submit" onclick="submitParent()">발주 등록하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 2: 후가공 분할 배분 추가 -->
+<div class="modal-backdrop" id="childModal">
+  <div class="modal">
+    <h2>후가공 분할 배분 추가</h2>
+    <div id="splitTargetInfo" style="background:#eff6ff; padding:10px; border-radius:8px; font-size:13px; margin-bottom:12px; font-weight:600;"></div>
+    
+    <div class="form-group">
+      <label>도금 / 표면처리 선택</label>
+      <div class="preset-grid" id="platingPresets">
+        <button type="button" class="preset-btn active" onclick="selectPreset('plating', '니켈렌지', this)">니켈렌지</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('plating', '무전해', this)">무전해</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('plating', '삼가크롬', this)">삼가크롬</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('plating', '흑색(사삼산화)', this)">흑색</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('plating', '생지(열처리)', this)">생지</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('plating', '직접입력', this)">직접입력</button>
+      </div>
+      <input type="text" id="cPlating" value="니켈렌지" />
+    </div>
+
+    <div class="form-group">
+      <label>와샤 조립 구분</label>
+      <div class="preset-grid" id="washerPresets">
+        <button type="button" class="preset-btn active" onclick="selectPreset('washer', '단품', this)">단품</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('washer', 'SP/W', this)">SP/W</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('washer', 'S/W', this)">S/W</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('washer', 'P/W', this)">P/W</button>
+        <button type="button" class="preset-btn" onclick="selectPreset('washer', '직접입력', this)">직접입력</button>
+      </div>
+      <input type="text" id="cWasher" value="단품" />
+    </div>
+
+    <div class="form-group">
+      <label>배분 중량 (kg) — <span id="maxRemLabel" style="color:var(--primary);"></span></label>
+      <input type="number" id="cKg" placeholder="예: 500" inputmode="numeric" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('childModal')">취소</button>
+      <button class="btn-submit" style="background:var(--accent);" onclick="submitChild()">배분 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading" id="loadingBox">처리 중...</div>
+
+<script>
+  // 연결된 현화스너 Google Apps Script 웹 앱 URL
+  const API_URL = "https://script.google.com/macros/s/AKfycbxHUXkhbanp9-g9rjAleUGKHCm_OQQaLJPwdnz4t3wdHU1YoyFntRlPrOxmny-bJBzp/exec";
+
+  let allParents = [];
+  let allChildren = [];
+  let selectedParentId = null;
+  let currentFilter = 'all';
+
+  window.onload = () => {
+    document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+    loadData();
+  };
+
+  function showLoading(msg) {
+    const box = document.getElementById('loadingBox');
+    box.textContent = msg || '처리 중...';
+    box.style.display = 'block';
+  }
+  function hideLoading() {
+    document.getElementById('loadingBox').style.display = 'none';
+  }
+
+  // 데이터 불러오기
+  async function loadData() {
+    showLoading('데이터 불러오는 중...');
+    try {
+      const res = await fetch(API_URL + '?action=getData');
+      const json = await res.json();
+      if (json.status === 'success') {
+        allParents = json.parents.reverse(); // 최신순
+        allChildren = json.children;
+        if (!selectedParentId && allParents.length > 0) {
+          selectedParentId = allParents[0].id;
+        }
+        renderParents();
+        renderDetail();
+      }
+    } catch (err) {
+      alert('데이터를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function setFilter(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderParents();
+  }
+
+  // 좌측 모체 발주 리스트 렌더링
+  function renderParents() {
+    const container = document.getElementById('parentList');
+    let filtered = allParents.map(p => {
+      const myChildren = allChildren.filter(c => c.parentId === p.id);
+      const usedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+      const remKg = p.totalKg - usedKg;
+      const hasUnreceived = myChildren.some(c => !c.checked);
+      return { ...p, usedKg, remKg, hasUnreceived, childCount: myChildren.length };
+    });
+
+    if (currentFilter === 'rem') {
+      filtered = filtered.filter(p => p.remKg > 0);
+    } else if (currentFilter === 'unreceived') {
+      filtered = filtered.filter(p => p.hasUnreceived);
+    }
+
+    document.getElementById('parentCount').textContent = filtered.length + '건';
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-msg">표시할 발주 내역이 없습니다.<br>상단 [+ 공장 생산발주 등록]을 눌러 시작하세요.</div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(p => {
+      const pct = p.totalKg > 0 ? Math.min(100, Math.round((p.usedKg / p.totalKg) * 100)) : 0;
+      const isSelected = p.id === selectedParentId;
+      return `
+        <div class="parent-card ${isSelected ? 'selected' : ''}" onclick="selectParent('${p.id}')">
+          <div class="p-top">
+            <div>
+              <span class="p-title">${p.item}</span>
+              <span class="p-spec">${p.spec}</span>
+            </div>
+            <span class="p-date">${p.date}</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar ${p.remKg <= 0 ? 'done' : ''}" style="width:${pct}%"></div>
+          </div>
+          <div class="p-stats">
+            <span>총 ${p.totalKg.toLocaleString()}kg (배분 ${p.usedKg.toLocaleString()}kg)</span>
+            <span class="stat-rem ${p.remKg <= 0 ? 'zero' : ''}">
+              ${p.remKg > 0 ? '남은 잔량 ' + p.remKg.toLocaleString() + 'kg' : '✔ 전량 배분완료'}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectParent(id) {
+    selectedParentId = id;
+    renderParents();
+    renderDetail();
+    // 모바일 화면일 경우 상세 영역으로 부드럽게 스크롤
+    if (window.innerWidth <= 860) {
+      document.getElementById('detailArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // 우측 상세 후가공 배분 및 입고체크 렌더링
+  function renderDetail() {
+    const area = document.getElementById('detailArea');
+    const parent = allParents.find(p => p.id === selectedParentId);
+    if (!parent) {
+      area.innerHTML = '<div class="empty-msg">왼쪽에서 품목을 선택해 주세요.</div>';
+      return;
+    }
+
+    const myChildren = allChildren.filter(c => c.parentId === parent.id);
+    const usedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+    const remKg = parent.totalKg - usedKg;
+
+    let childrenHtml = '';
+    if (myChildren.length === 0) {
+      childrenHtml = '<div class="empty-msg">아직 분할 배분된 후가공 내역이 없습니다.<br>위 초록색 버튼을 눌러 도금·조립 물량을 배분하세요.</div>';
+    } else {
+      childrenHtml = myChildren.map(c => `
+        <div class="child-item ${c.checked ? 'checked' : ''}">
+          <div class="c-info">
+            <div class="c-badges">
+              <span class="badge-plating">${c.plating}</span>
+              <span class="badge-washer">${c.washer}</span>
+              <span class="c-kg">${c.kg.toLocaleString()} kg</span>
+            </div>
+            <div class="c-meta">
+              ${c.checked ? '입고완료 (' + c.inDate + ')' : '진행중 (미입고)'}
+            </div>
+          </div>
+          <button class="check-btn ${c.checked ? 'done' : ''}" onclick="toggleCheck('${c.id}', ${!c.checked})">
+            ${c.checked ? '✔ 입고됨' : '⬜ 입고체크'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    area.innerHTML = `
+      <div class="detail-header">
+        <h3>${parent.item} <span class="p-spec">${parent.spec}</span></h3>
+        <div class="detail-sub">
+          총 발주: <b>${parent.totalKg.toLocaleString()}kg</b> | 
+          배분합계: <b>${usedKg.toLocaleString()}kg</b> | 
+          남은잔량: <b style="color:${remKg > 0 ? 'var(--warn)' : 'var(--accent)'};">${remKg.toLocaleString()}kg</b>
+          ${parent.note ? '<br>메모: ' + parent.note : ''}
+        </div>
+      </div>
+      <button class="btn-split" onclick="openChildModal(${remKg})">
+        + 후가공 분할 배분 추가 (잔량 ${remKg.toLocaleString()}kg)
+      </button>
+      <div>${childrenHtml}</div>
+    `;
+  }
+
+  // 모달 제어
+  function openParentModal() {
+    document.getElementById('pItem').value = '';
+    document.getElementById('pSpec').value = '';
+    document.getElementById('pKg').value = '';
+    document.getElementById('pNote').value = '';
+    document.getElementById('parentModal').classList.add('open');
+  }
+
+  function openChildModal(remKg) {
+    const parent = allParents.find(p => p.id === selectedParentId);
+    if (!parent) return;
+    document.getElementById('splitTargetInfo').textContent = `${parent.item} (${parent.spec}) — 남은 잔량: ${remKg.toLocaleString()}kg`;
+    document.getElementById('maxRemLabel').textContent = `남은 잔량: ${remKg.toLocaleString()}kg`;
+    document.getElementById('cKg').value = remKg > 0 ? remKg : '';
+    document.getElementById('childModal').classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function selectPreset(type, val, btn) {
+    const containerId = type === 'plating' ? 'platingPresets' : 'washerPresets';
+    const inputId = type === 'plating' ? 'cPlating' : 'cWasher';
+    document.querySelectorAll(`#${containerId} .preset-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const input = document.getElementById(inputId);
+    if (val === '직접입력') {
+      input.value = '';
+      input.focus();
+    } else {
+      input.value = val;
+    }
+  }
+
+  // 신규 모체 발주 저장
+  async function submitParent() {
+    const date = document.getElementById('pDate').value;
+    const item = document.getElementById('pItem').value.trim();
+    const spec = document.getElementById('pSpec').value.trim();
+    const totalKg = Number(document.getElementById('pKg').value);
+    const note = document.getElementById('pNote').value.trim();
+
+    if (!item || !spec || !totalKg || totalKg <= 0) {
+      alert('품목명, 규격, 총 발주 중량(kg)을 모두 입력해 주세요.');
+      return;
+    }
+
+    closeModal('parentModal');
+    showLoading('발주 등록 중...');
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addParent', date, item, spec, totalKg, note })
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        selectedParentId = json.id;
+        await loadData();
+      }
+    } catch (e) {
+      alert('저장 중 오류가 발생했습니다.');
+      hideLoading();
+    }
+  }
+
+  // 신규 후가공 분할 배분 저장
+  async function submitChild() {
+    const parent = allParents.find(p => p.id === selectedParentId);
+    const myChildren = allChildren.filter(c => c.parentId === parent.id);
+    const usedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+    const remKg = parent.totalKg - usedKg;
+
+    const plating = document.getElementById('cPlating').value.trim();
+    const washer = document.getElementById('cWasher').value.trim();
+    const kg = Number(document.getElementById('cKg').value);
+
+    if (!plating || !washer || !kg || kg <= 0) {
+      alert('도금 구분, 와샤 구분, 배분 중량을 모두 입력해 주세요.');
+      return;
+    }
+    if (kg > remKg) {
+      if (!confirm(`입력한 중량(${kg}kg)이 남은 잔량(${remKg}kg)보다 큽니다. 그래도 배분하시겠습니까?`)) {
+        return;
+      }
+    }
+
+    closeModal('childModal');
+    showLoading('분할 배분 저장 중...');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addChild', parentId: parent.id, plating, washer, kg })
+      });
+      await loadData();
+    } catch (e) {
+      alert('저장 중 오류가 발생했습니다.');
+      hideLoading();
+    }
+  }
+
+  // 원터치 입고 체크 토글
+  async function toggleCheck(childId, nextState) {
+    // 화면 먼저 즉시 반영 (빠른 체감 속도)
+    const target = allChildren.find(c => c.id === childId);
+    if (target) {
+      target.checked = nextState;
+      target.inDate = nextState ? new Date().toISOString().split('T')[0] : '';
+      renderDetail();
+      renderParents();
+    }
+
+    showLoading(nextState ? '입고 완료 처리 중...' : '미입고로 변경 중...');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'toggleCheck', childId, checked: nextState })
+      });
+    } catch (e) {
+      alert('상태 변경 저장에 실패했습니다. 새로고침해 주세요.');
+    } finally {
+      hideLoading();
+    }
+  }
+</script>
+
+</body>
+</html>

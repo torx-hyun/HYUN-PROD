@@ -123,4 +123,605 @@
       background: #f8fafc; border-color: #cbd5e1; opacity: 0.72;
     }
     .c-info { flex: 1; }
-    .c-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom
+    .c-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 5px; }
+    .badge-plating {
+      background: #dbeafe; color: #1e40af; padding: 3px 8px; border-radius: 6px;
+      font-size: 13px; font-weight: 700;
+    }
+    .badge-washer {
+      background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 6px;
+      font-size: 13px; font-weight: 700;
+    }
+    .c-kg { font-size: 16px; font-weight: 800; color: var(--text); }
+    .c-meta { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    .c-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .check-btn {
+      min-width: 96px; height: 40px; border-radius: 8px; border: 2px solid var(--border);
+      background: #fff; color: var(--text); font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .check-btn.done {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .deduct-btn {
+      min-width: 96px; height: 32px; border-radius: 6px; border: 1px solid #94a3b8;
+      background: #fff; color: #334155; font-size: 12px; font-weight: 700;
+      cursor: pointer;
+    }
+    .deduct-btn:hover { background: #f1f5f9; border-color: #475569; }
+
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+      z-index: 200; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff; width: 100%; max-width: 440px; border-radius: 14px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 92vh; overflow-y: auto;
+    }
+    .modal h2 { margin: 0 0 14px 0; font-size: 18px; }
+    .form-group { margin-bottom: 13px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #334155; }
+    .form-group input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px;
+    }
+    .preset-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 6px; }
+    .preset-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
+    .preset-btn {
+      padding: 10px 2px; border: 1.5px solid var(--border); border-radius: 8px;
+      background: #f8fafc; font-size: 13px; font-weight: 700; cursor: pointer; color: #1e293b;
+      white-space: nowrap;
+    }
+    .preset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+    .btn-cancel {
+      flex: 1; padding: 11px; border: 1px solid var(--border); background: #fff;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .btn-submit {
+      flex: 1.5; padding: 11px; border: none; background: var(--primary); color: #fff;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+
+    .loading {
+      position: fixed; bottom: 16px; right: 16px; background: #1e293b; color: #fff;
+      padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      display: none; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .empty-msg { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>현화스너 생산·후가공 입고관리</h1>
+  <button class="btn-header" onclick="loadData()">↻ 새로고침</button>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <div class="filter-group">
+      <button class="filter-btn active" onclick="setFilter('all', this)">전체 보기</button>
+      <button class="filter-btn" onclick="setFilter('rem', this)">반제품 잔량남음</button>
+      <button class="filter-btn" onclick="setFilter('unreceived', this)">미입고 있음</button>
+      <button class="filter-btn" onclick="setFilter('instock', this)">입고재고 보유</button>
+    </div>
+    <button class="btn-add-main" onclick="openParentModal()">+ 공장 생산발주 등록</button>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-title">
+        <span>1. 공장 생산발주 (원소재/반제품)</span>
+        <span id="parentCount" style="color:var(--primary); font-size:13px;">0건</span>
+      </div>
+      <div id="parentList">
+        <div class="empty-msg">데이터를 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        <span>2. 후가공 분할 배분 & 입고·출고차감</span>
+      </div>
+      <div id="detailArea">
+        <div class="empty-msg">왼쪽에서 품목을 선택하면<br>후가공 배분 내역과 입고·차감 버튼이 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 1: 공장 생산발주 등록 -->
+<div class="modal-backdrop" id="parentModal">
+  <div class="modal">
+    <h2>공장 생산발주 등록</h2>
+    <div class="form-group">
+      <label>발주일</label>
+      <input type="date" id="pDate" />
+    </div>
+    
+    <div class="form-group">
+      <label>재질 선택 (클릭)</label>
+      <div class="preset-grid-4" id="matPresets">
+        <button type="button" class="preset-btn active" onclick="selectGroupBtn('matPresets', 'pMat', 'SCM', this)">SCM</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('matPresets', 'pMat', '스텐', this)">스텐</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('matPresets', 'pMat', '철', this)">철</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('matPresets', 'pMat', '직접입력', this)">직접입력</button>
+      </div>
+      <input type="text" id="pMat" value="SCM" placeholder="재질 입력" />
+    </div>
+
+    <div class="form-group">
+      <label>후처리 선택 (클릭)</label>
+      <div class="preset-grid-5" id="pPostPresets">
+        <button type="button" class="preset-btn active" onclick="selectGroupBtn('pPostPresets', 'pPost', 'NI', this)">NI</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('pPostPresets', 'pPost', '무전해', this)">무전해</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('pPostPresets', 'pPost', '산처리', this)">산처리</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('pPostPresets', 'pPost', '천연색', this)">천연색</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('pPostPresets', 'pPost', '기타', this)">기타</button>
+      </div>
+      <input type="text" id="pPost" value="NI" placeholder="후처리 직접 입력 가능 (없으면 비워두기)" />
+    </div>
+
+    <div class="form-group">
+      <label>머리모양 / 품목명 (수동 입력)</label>
+      <input type="text" id="pHead" list="headHistory" placeholder="예: 유두렌지(12.9), 둥근머리, 접시머리" />
+      <datalist id="headHistory"></datalist>
+    </div>
+
+    <div class="form-group">
+      <label>규격 (호칭×길이)</label>
+      <input type="text" id="pSpec" placeholder="예: 3*10 또는 M4*12" />
+    </div>
+
+    <div class="form-group">
+      <label>총 발주 중량 (kg)</label>
+      <input type="number" id="pKg" placeholder="예: 1000" inputmode="numeric" />
+    </div>
+
+    <div class="form-group">
+      <label>비고 (선택)</label>
+      <input type="text" id="pNote" placeholder="공장명 또는 메모" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('parentModal')">취소</button>
+      <button class="btn-submit" onclick="submitParent()">발주 등록하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 2: 후가공 분할 배분 추가 -->
+<div class="modal-backdrop" id="childModal">
+  <div class="modal">
+    <h2>후가공 분할 배분 추가</h2>
+    <div id="splitTargetInfo" style="background:#eff6ff; padding:10px; border-radius:8px; font-size:13px; margin-bottom:12px; font-weight:600;"></div>
+    
+    <div class="form-group">
+      <label>후처리 / 도금 선택 (클릭)</label>
+      <div class="preset-grid-5" id="platingPresets">
+        <button type="button" class="preset-btn active" onclick="selectGroupBtn('platingPresets', 'cPlating', 'NI', this)">NI</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('platingPresets', 'cPlating', '무전해', this)">무전해</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('platingPresets', 'cPlating', '산처리', this)">산처리</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('platingPresets', 'cPlating', '천연색', this)">천연색</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('platingPresets', 'cPlating', '기타', this)">기타</button>
+      </div>
+      <input type="text" id="cPlating" value="NI" placeholder="후처리 직접 입력 가능" />
+    </div>
+
+    <div class="form-group">
+      <label>와샤 / 형태 구분 (단축버튼 또는 수동입력)</label>
+      <div class="preset-grid-4" id="washerPresets">
+        <button type="button" class="preset-btn active" onclick="selectGroupBtn('washerPresets', 'cWasher', '단품', this)">단품</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('washerPresets', 'cWasher', 'SP/W', this)">SP/W</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('washerPresets', 'cWasher', 'S/W', this)">S/W</button>
+        <button type="button" class="preset-btn" onclick="selectGroupBtn('washerPresets', 'cWasher', 'P/W', this)">P/W</button>
+      </div>
+      <input type="text" id="cWasher" list="washerHistory" value="단품" placeholder="직접 입력 가능 (예: SP/W, 특수와샤 등)" />
+      <datalist id="washerHistory"></datalist>
+    </div>
+
+    <div class="form-group">
+      <label>배분 중량 (kg) — <span id="maxRemLabel" style="color:var(--primary);"></span></label>
+      <input type="number" id="cKg" placeholder="예: 500" inputmode="numeric" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('childModal')">취소</button>
+      <button class="btn-submit" style="background:var(--accent);" onclick="submitChild()">배분 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 3: 입고 물량 출고/포장 차감 -->
+<div class="modal-backdrop" id="deductModal">
+  <div class="modal">
+    <h2>입고 재고 출고/포장 차감</h2>
+    <div id="deductTargetInfo" style="background:#ecfdf5; padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; font-weight:600; color:#065f46;"></div>
+    <input type="hidden" id="dChildId" />
+    <div class="form-group">
+      <label>이번에 빼갈 중량 (kg)</label>
+      <input type="number" id="dUseKg" placeholder="예: 40" inputmode="numeric" />
+    </div>
+    <div style="display:flex; gap:6px; margin-bottom:12px;">
+      <button type="button" class="preset-btn" style="flex:1;" onclick="setAllDeduct()">전량 모두 빼기 (0kg 처리)</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('deductModal')">취소</button>
+      <button class="btn-submit" onclick="submitDeduct()">차감 저장하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading" id="loadingBox">처리 중...</div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbxHUXkhbanp9-g9rjAleUGKHCm_OQQaLJPwdnz4t3wdHU1YoyFntRlPrOxmny-bJBzp/exec";
+
+  let allParents = [];
+  let allChildren = [];
+  let selectedParentId = null;
+  let currentFilter = 'all';
+  let currentDeductMax = 0;
+
+  window.onload = () => {
+    document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+    loadData();
+  };
+
+  function showLoading(msg) {
+    const box = document.getElementById('loadingBox');
+    box.textContent = msg || '처리 중...';
+    box.style.display = 'block';
+  }
+  function hideLoading() {
+    document.getElementById('loadingBox').style.display = 'none';
+  }
+
+  async function loadData() {
+    showLoading('데이터 불러오는 중...');
+    try {
+      const res = await fetch(API_URL + '?action=getData');
+      const json = await res.json();
+      if (json.status === 'success') {
+        allParents = json.parents.reverse();
+        allChildren = json.children.map(c => ({
+          ...c,
+          usedKg: Number(c.usedKg) || 0
+        }));
+        if (!selectedParentId && allParents.length > 0) {
+          selectedParentId = allParents[0].id;
+        }
+        updateDatalists();
+        renderParents();
+        renderDetail();
+      }
+    } catch (err) {
+      alert('데이터를 불러오지 못했습니다. 새로고침해 주세요.');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function updateDatalists() {
+    const heads = new Set();
+    allParents.forEach(p => {
+      const parts = p.item.split(' ');
+      if (parts.length > 1) heads.add(parts[parts.length - 1]);
+    });
+    document.getElementById('headHistory').innerHTML = Array.from(heads).map(h => `<option value="${h}">`).join('');
+
+    const washers = new Set(['단품', 'SP/W', 'S/W', 'P/W']);
+    allChildren.forEach(c => { if (c.washer) washers.add(c.washer); });
+    document.getElementById('washerHistory').innerHTML = Array.from(washers).map(w => `<option value="${w}">`).join('');
+  }
+
+  function setFilter(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderParents();
+  }
+
+  function renderParents() {
+    const container = document.getElementById('parentList');
+    let filtered = allParents.map(p => {
+      const myChildren = allChildren.filter(c => c.parentId === p.id);
+      const allocatedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+      const remKg = p.totalKg - allocatedKg;
+      const hasUnreceived = myChildren.some(c => !c.checked);
+      const hasInStock = myChildren.some(c => c.checked && (c.kg - c.usedKg) > 0);
+      return { ...p, allocatedKg, remKg, hasUnreceived, hasInStock };
+    });
+
+    if (currentFilter === 'rem') {
+      filtered = filtered.filter(p => p.remKg > 0);
+    } else if (currentFilter === 'unreceived') {
+      filtered = filtered.filter(p => p.hasUnreceived);
+    } else if (currentFilter === 'instock') {
+      filtered = filtered.filter(p => p.hasInStock);
+    }
+
+    document.getElementById('parentCount').textContent = filtered.length + '건';
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-msg">해당 조건의 발주 내역이 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(p => {
+      const pct = p.totalKg > 0 ? Math.min(100, Math.round((p.allocatedKg / p.totalKg) * 100)) : 0;
+      const isSelected = p.id === selectedParentId;
+      return `
+        <div class="parent-card ${isSelected ? 'selected' : ''}" onclick="selectParent('${p.id}')">
+          <div class="p-top">
+            <div>
+              <span class="p-title">${p.item}</span>
+              <span class="p-spec">${p.spec}</span>
+            </div>
+            <span class="p-date">${p.date}</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar ${p.remKg <= 0 ? 'done' : ''}" style="width:${pct}%"></div>
+          </div>
+          <div class="p-stats">
+            <span>총 ${p.totalKg.toLocaleString()}kg (배분 ${p.allocatedKg.toLocaleString()}kg)</span>
+            <span class="stat-rem ${p.remKg <= 0 ? 'zero' : ''}">
+              ${p.remKg > 0 ? '반제품 잔량 ' + p.remKg.toLocaleString() + 'kg' : '✔ 전량 배분완료'}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectParent(id) {
+    selectedParentId = id;
+    renderParents();
+    renderDetail();
+    if (window.innerWidth <= 860) {
+      document.getElementById('detailArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function renderDetail() {
+    const area = document.getElementById('detailArea');
+    const parent = allParents.find(p => p.id === selectedParentId);
+    if (!parent) {
+      area.innerHTML = '<div class="empty-msg">왼쪽에서 품목을 선택해 주세요.</div>';
+      return;
+    }
+
+    const myChildren = allChildren.filter(c => c.parentId === parent.id);
+    const allocatedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+    const remKg = parent.totalKg - allocatedKg;
+
+    let childrenHtml = '';
+    if (myChildren.length === 0) {
+      childrenHtml = '<div class="empty-msg">아직 분할 배분된 후가공 내역이 없습니다.<br>위 초록색 버튼을 눌러 도금·조립 물량을 배분하세요.</div>';
+    } else {
+      childrenHtml = myChildren.map(c => {
+        const remainStock = Math.max(0, c.kg - c.usedKg);
+        const isExhausted = c.checked && remainStock === 0;
+        return `
+          <div class="child-item ${c.checked ? (isExhausted ? 'exhausted' : 'checked') : ''}">
+            <div class="c-info">
+              <div class="c-badges">
+                <span class="badge-plating">${c.plating}</span>
+                <span class="badge-washer">${c.washer}</span>
+                <span class="c-kg">${c.kg.toLocaleString()} kg</span>
+              </div>
+              <div class="c-meta">
+                ${!c.checked 
+                  ? '⏳ 후가공 진행중 (미입고)' 
+                  : (isExhausted 
+                      ? `✔ 입고(${c.inDate}) → <b>전량 소진완료 (잔여 0kg)</b>` 
+                      : `✔ 입고(${c.inDate}) | 사용: ${c.usedKg.toLocaleString()}kg → <b style="color:#047857; font-size:13px;">남은재고 ${remainStock.toLocaleString()}kg</b>`
+                    )
+                }
+              </div>
+            </div>
+            <div class="c-actions">
+              <button class="check-btn ${c.checked ? 'done' : ''}" onclick="toggleCheck('${c.id}', ${!c.checked})">
+                ${c.checked ? '✔ 입고됨' : '⬜ 입고체크'}
+              </button>
+              ${c.checked && remainStock > 0 
+                ? `<button class="deduct-btn" onclick="openDeductModal('${c.id}')">- 출고/차감</button>` 
+                : ''
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    area.innerHTML = `
+      <div class="detail-header">
+        <h3>${parent.item} <span class="p-spec">${parent.spec}</span></h3>
+        <div class="detail-sub">
+          총 발주: <b>${parent.totalKg.toLocaleString()}kg</b> | 
+          배분합계: <b>${allocatedKg.toLocaleString()}kg</b> | 
+          반제품 잔량: <b style="color:${remKg > 0 ? 'var(--warn)' : 'var(--accent)'};">${remKg.toLocaleString()}kg</b>
+          ${parent.note ? '<br>메모: ' + parent.note : ''}
+        </div>
+      </div>
+      <button class="btn-split" onclick="openChildModal(${remKg})">
+        + 후가공 분할 배분 추가 (반제품 잔량 ${remKg.toLocaleString()}kg)
+      </button>
+      <div>${childrenHtml}</div>
+    `;
+  }
+
+  function selectGroupBtn(groupId, inputId, val, btn) {
+    document.querySelectorAll(`#${groupId} .preset-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const input = document.getElementById(inputId);
+    if (val === '직접입력' || val === '기타') {
+      input.value = '';
+      input.focus();
+    } else {
+      input.value = val;
+    }
+  }
+
+  function openParentModal() {
+    document.getElementById('pHead').value = '';
+    document.getElementById('pSpec').value = '';
+    document.getElementById('pKg').value = '';
+    document.getElementById('pNote').value = '';
+    document.getElementById('parentModal').classList.add('open');
+  }
+
+  function openChildModal(remKg) {
+    const parent = allParents.find(p => p.id === selectedParentId);
+    if (!parent) return;
+    document.getElementById('splitTargetInfo').textContent = `${parent.item} (${parent.spec}) — 반제품 잔량: ${remKg.toLocaleString()}kg`;
+    document.getElementById('maxRemLabel').textContent = `남은 잔량: ${remKg.toLocaleString()}kg`;
+    document.getElementById('cKg').value = remKg > 0 ? remKg : '';
+    document.getElementById('childModal').classList.add('open');
+  }
+
+  function openDeductModal(childId) {
+    const c = allChildren.find(item => item.id === childId);
+    if (!c) return;
+    const remain = Math.max(0, c.kg - c.usedKg);
+    currentDeductMax = remain;
+    document.getElementById('dChildId').value = childId;
+    document.getElementById('deductTargetInfo').innerHTML = 
+      `품목: <b>${c.plating} / ${c.washer}</b><br>현재 남은 재고: <b>${remain.toLocaleString()} kg</b> (총 입고 ${c.kg.toLocaleString()}kg 중 ${c.usedKg.toLocaleString()}kg 사용됨)`;
+    document.getElementById('dUseKg').value = '';
+    document.getElementById('deductModal').classList.add('open');
+  }
+
+  function setAllDeduct() {
+    document.getElementById('dUseKg').value = currentDeductMax;
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  async function submitParent() {
+    const date = document.getElementById('pDate').value;
+    const mat = document.getElementById('pMat').value.trim();
+    const post = document.getElementById('pPost').value.trim();
+    const head = document.getElementById('pHead').value.trim();
+    const spec = document.getElementById('pSpec').value.trim();
+    const totalKg = Number(document.getElementById('pKg').value);
+    const note = document.getElementById('pNote').value.trim();
+
+    if (!mat || !head || !spec || !totalKg || totalKg <= 0) {
+      alert('재질, 머리모양/품목명, 규격, 총 발주 중량을 모두 입력해 주세요.');
+      return;
+    }
+    const item = [mat, post, head].filter(Boolean).join(' ');
+
+    closeModal('parentModal');
+    showLoading('발주 등록 중...');
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addParent', date, item, spec, totalKg, note })
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        selectedParentId = json.id;
+        await loadData();
+      }
+    } catch (e) {
+      alert('저장 중 오류가 발생했습니다.');
+      hideLoading();
+    }
+  }
+
+  async function submitChild() {
+    const parent = allParents.find(p => p.id === selectedParentId);
+    const myChildren = allChildren.filter(c => c.parentId === parent.id);
+    const allocatedKg = myChildren.reduce((sum, c) => sum + c.kg, 0);
+    const remKg = parent.totalKg - allocatedKg;
+
+    const plating = document.getElementById('cPlating').value.trim();
+    const washer = document.getElementById('cWasher').value.trim() || '단품';
+    const kg = Number(document.getElementById('cKg').value);
+
+    if (!plating || !kg || kg <= 0) {
+      alert('후처리와 배분 중량을 입력해 주세요.');
+      return;
+    }
+    if (kg > remKg) {
+      if (!confirm(`입력한 중량(${kg}kg)이 반제품 잔량(${remKg}kg)보다 큽니다. 그래도 배분하시겠습니까?`)) {
+        return;
+      }
+    }
+
+    closeModal('childModal');
+    showLoading('분할 배분 저장 중...');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'addChild', parentId: parent.id, plating, washer, kg })
+      });
+      await loadData();
+    } catch (e) {
+      alert('저장 중 오류가 발생했습니다.');
+      hideLoading();
+    }
+  }
+
+  async function toggleCheck(childId, nextState) {
+    const target = allChildren.find(c => c.id === childId);
+    if (target) {
+      target.checked = nextState;
+      target.inDate = nextState ? new Date().toISOString().split('T')[0] : '';
+      renderDetail();
+      renderParents();
+    }
+
+    showLoading(nextState ? '입고 완료 처리 중...' : '미입고로 변경 중...');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'toggleCheck', childId, checked: nextState })
+      });
+    } catch (e) {
+      alert('상태 변경 저장에 실패했습니다.');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function submitDeduct() {
+    const childId = document.getElementById('dChildId').value;
+    const addUse = Number(document.getElementById('dUseKg').value);
+    if (!addUse || addUse <= 0) {
+      alert('차감할 중량(kg)을 입력해 주세요.');
+      return;
+    }
+    const target = allChildren.find(c => c.id === childId);
+    if (!target) return;
+
+    const nextUsedKg = Math.min(target.kg, target.usedKg + addUse);
+    target.usedKg = nextUsedKg;
+    closeModal('deductModal');
+    renderDetail();
+    renderParents();
+
+    showLoading('출고/차감 내역 저장 중...');
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'updateUsedKg', childId, usedKg: nextUsedKg })
+      });
+    } catch (e) {
+      alert('차감 저장에 실패했습니다. 새로고침해 주세요.');
+    } finally {
+      hideLoading();
+    }
+  }
+</script>
+
+</body>
+</html>

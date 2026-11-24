@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>현화스너 생산·공정·입고 통합관리</title>
+  <title>현화스너 리벳·공장 잔량관리</title>
   <style>
     :root {
       --primary: #1e40af;
       --primary-light: #eff6ff;
       --accent: #059669;
       --accent-light: #ecfdf5;
-      --purple: #6d28d9;
-      --purple-light: #f5f3ff;
       --warn: #d97706;
       --danger: #dc2626;
       --bg: #f1f5f9;
@@ -28,13 +26,13 @@
       display: flex; justify-content: space-between; align-items: center;
       position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-    header h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
     .btn-header {
       background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.3);
       padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
     }
 
-    .container { max-width: 1240px; margin: 16px auto; padding: 0 14px; }
+    .container { max-width: 1200px; margin: 16px auto; padding: 0 14px; }
     
     .toolbar {
       display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center;
@@ -43,7 +41,7 @@
     }
     .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
     .filter-btn {
-      padding: 7px 12px; border-radius: 20px; border: 1px solid var(--border);
+      padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border);
       background: #fff; color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
     }
     .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -53,9 +51,9 @@
     }
 
     .main-grid {
-      display: grid; grid-template-columns: 1fr 1.35fr; gap: 16px; align-items: start;
+      display: grid; grid-template-columns: 1fr 1.25fr; gap: 16px; align-items: start;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 860px) {
       .main-grid { grid-template-columns: 1fr; }
     }
 
@@ -77,20 +75,19 @@
       border-color: var(--primary); background: var(--primary-light);
       box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.15);
     }
-    .p-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .p-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
     .p-title { font-size: 16px; font-weight: 700; }
     .p-spec {
       display: inline-block; background: #e2e8f0; color: #1e293b;
-      padding: 2px 8px; border-radius: 5px; font-size: 13px; font-weight: 700; margin-left: 4px;
+      padding: 2px 8px; border-radius: 5px; font-size: 13px; font-weight: 700; margin-left: 5px;
     }
-    .p-sub-unit { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .progress-wrap { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 6px 0; }
+    .progress-wrap { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
     .progress-bar { height: 100%; background: var(--primary); }
     .progress-bar.done { background: var(--accent); }
     .p-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; font-size: 13px; font-weight: 600; }
     .stat-rem { color: var(--warn); font-weight: 700; }
     .stat-rem.zero { color: var(--accent); }
-    .stat-instock {
+    .stat-factory-rem {
       width: 100%; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #cbd5e1;
       color: #047857; font-size: 13px; font-weight: 700;
     }
@@ -108,24 +105,22 @@
       cursor: pointer; margin-bottom: 14px;
     }
 
-    /* 공정 카드 */
-    .step-card {
+    /* 공장 작업 카드 */
+    .work-card {
       border: 1.5px solid var(--border); border-radius: 10px; padding: 13px;
       margin-bottom: 10px; background: #fff;
     }
-    .step-card.status-plating { border-color: #c4b5fd; background: var(--purple-light); }
-    .step-card.status-done { border-color: #6ee7b7; background: var(--accent-light); }
-    .step-card.status-exhausted { border-color: #cbd5e1; background: #f8fafc; opacity: 0.78; }
+    .work-card.done { border-color: #6ee7b7; background: var(--accent-light); }
+    .work-card.exhausted { border-color: #cbd5e1; background: #f8fafc; opacity: 0.78; }
 
-    .s-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-    .badge { padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+    .w-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .badge { padding: 3px 9px; border-radius: 6px; font-size: 13px; font-weight: 700; }
     .b-factory { background: #1e293b; color: #fff; }
     .b-proc { background: #dbeafe; color: #1e40af; }
-    .b-plating { background: #ede9fe; color: #5b21b6; }
     .b-status { background: #fef3c7; color: #92400e; }
     .b-status.done { background: #059669; color: #fff; }
 
-    .s-body { font-size: 13px; line-height: 1.55; color: #1e293b; margin-bottom: 8px; }
+    .w-body { font-size: 13px; line-height: 1.55; color: #1e293b; margin-bottom: 8px; }
     .diff-plus { color: #1d4ed8; font-weight: 700; }
     .diff-minus { color: #dc2626; font-weight: 700; }
     .remain-pill {
@@ -134,13 +129,11 @@
     }
     .remain-pill.zero { background: #64748b; }
 
-    .s-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .w-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .act-btn {
-      padding: 8px 12px; border-radius: 7px; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
+      padding: 8px 13px; border-radius: 7px; border: none; font-size: 13px; font-weight: 700; cursor: pointer;
     }
-    .btn-step1 { background: #d97706; color: #fff; }
-    .btn-plating { background: #6d28d9; color: #fff; }
-    .btn-final { background: #059669; color: #fff; }
+    .btn-complete { background: #d97706; color: #fff; }
     .btn-deduct { background: #fff; border: 1px solid #64748b; color: #1e293b; }
 
     /* 모달 */
@@ -150,21 +143,19 @@
     }
     .modal-backdrop.open { display: flex; }
     .modal {
-      background: #fff; width: 100%; max-width: 450px; border-radius: 14px;
+      background: #fff; width: 100%; max-width: 460px; border-radius: 14px;
       padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 92vh; overflow-y: auto;
     }
     .modal h2 { margin: 0 0 14px 0; font-size: 18px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #334155; }
+    .form-group { margin-bottom: 13px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #334155; }
     .form-group input {
-      width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px;
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px;
     }
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .preset-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 6px; }
     .preset-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
     .preset-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
     .preset-btn {
-      padding: 9px 2px; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 4px; border: 1.5px solid var(--border); border-radius: 8px;
       background: #f8fafc; font-size: 13px; font-weight: 700; cursor: pointer; color: #1e293b;
     }
     .preset-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -192,7 +183,7 @@
 <body>
 
 <header>
-  <h1>현화스너 생산·공정·입고 통합관리</h1>
+  <h1>현화스너 리벳·공장 잔량관리</h1>
   <button class="btn-header" onclick="loadData()">↻ 새로고침</button>
 </header>
 
@@ -200,17 +191,17 @@
   <div class="toolbar">
     <div class="filter-group">
       <button class="filter-btn active" onclick="setFilter('all', this)">전체 보기</button>
-      <button class="filter-btn" onclick="setFilter('rem', this)">미배분 원소재</button>
-      <button class="filter-btn" onclick="setFilter('working', this)">공정/도금 진행중</button>
-      <button class="filter-btn" onclick="setFilter('instock', this)">입고재고 보유</button>
+      <button class="filter-btn" onclick="setFilter('rem', this)">미배분 리벳잔량</button>
+      <button class="filter-btn" onclick="setFilter('working', this)">공장 작업중</button>
+      <button class="filter-btn" onclick="setFilter('done', this)">작업완료 재고보유</button>
     </div>
-    <button class="btn-add-main" onclick="openParentModal()">+ 원소재 발주 등록</button>
+    <button class="btn-add-main" onclick="openParentModal()">+ 리벳 발주 등록</button>
   </div>
 
   <div class="main-grid">
     <div class="panel">
       <div class="panel-title">
-        <span>1. 공장 원소재/압조 발주</span>
+        <span>1. 리벳 반제품 발주 현황</span>
         <span id="parentCount" style="color:var(--primary); font-size:13px;">0건</span>
       </div>
       <div id="parentList"><div class="empty-msg">불러오는 중...</div></div>
@@ -218,17 +209,17 @@
 
     <div class="panel">
       <div class="panel-title">
-        <span>2. 성형·조립 → 열처리·도금 → 최종입고</span>
+        <span>2. 공장별 작업 배분 (화신 · 대성 · 하늘)</span>
       </div>
       <div id="detailArea"><div class="empty-msg">왼쪽에서 품목을 선택해 주세요.</div></div>
     </div>
   </div>
 </div>
 
-<!-- 모달 1: 원소재 발주 등록 -->
+<!-- 모달 1: 리벳 발주 등록 -->
 <div class="modal-backdrop" id="parentModal">
   <div class="modal">
-    <h2>원소재/압조 발주 등록</h2>
+    <h2>리벳 반제품 발주 등록</h2>
     <div class="form-group">
       <label>발주일</label>
       <input type="date" id="pDate" />
@@ -244,32 +235,33 @@
       <input type="text" id="pMat" value="SCM" />
     </div>
     <div class="form-group">
-      <label>머리모양 / 품목명 (유두렌지 기본)</label>
-      <input type="text" id="pHead" value="유두렌지(12.9)" placeholder="예: 유두렌지(12.9), 둥근머리" />
+      <label>머리모양 선택 (클릭)</label>
+      <div class="preset-grid-4" id="headPresets">
+        <button type="button" class="preset-btn active" onclick="selectBtn('headPresets', 'pHead', '유두렌지', this)">유두렌지</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라렌지', this)">사라렌지</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루렌지', this)">마루렌지</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루별', this)">마루별</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루핀별', this)">마루핀별</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라별', this)">사라별</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라핀별', this)">사라핀별</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'P+', this)">P+</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'F+', this)">F+</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'B+', this)">B+</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '기타', this)">기타</button>
+      </div>
+      <input type="text" id="pHead" value="유두렌지" placeholder="머리모양 직접 입력 가능" />
     </div>
-    <div class="row-2">
-      <div class="form-group">
-        <label>규격 (호칭*길이)</label>
-        <input type="text" id="pSpec" placeholder="예: 3*10" oninput="recalcParentUnit()" />
-      </div>
-      <div class="form-group">
-        <label>총 발주 중량 (kg)</label>
-        <input type="number" id="pKg" placeholder="예: 1000" inputmode="numeric" oninput="recalcParentUnit()" />
-      </div>
+    <div class="form-group">
+      <label>규격 (호칭*길이)</label>
+      <input type="text" id="pSpec" placeholder="예: 3*10 또는 4*12" />
     </div>
-    <div class="row-2">
-      <div class="form-group">
-        <label>단품 단중 (g) — 자동계산/수정가능</label>
-        <input type="number" step="0.0001" id="pUnitW" placeholder="0.7196" oninput="recalcParentQtyOnly()" />
-      </div>
-      <div class="form-group">
-        <label>환산 발주수량 (천개)</label>
-        <input type="text" id="pQtyPreview" readonly style="background:#f8fafc; font-weight:700; color:#1e40af;" />
-      </div>
+    <div class="form-group">
+      <label>총 발주 중량 (kg)</label>
+      <input type="number" id="pKg" placeholder="예: 1000" inputmode="numeric" />
     </div>
     <div class="form-group">
       <label>비고 (선택)</label>
-      <input type="text" id="pNote" placeholder="압조공장 또는 메모" />
+      <input type="text" id="pNote" placeholder="메모" />
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('parentModal')">취소</button>
@@ -278,116 +270,64 @@
   </div>
 </div>
 
-<!-- 모달 2: 1차 공장 배분 (화신/대성/하늘 + SP/W, S/W, 로링, 리벳) -->
-<div class="modal-backdrop" id="step1Modal">
+<!-- 모달 2: 공장 작업 배분 -->
+<div class="modal-backdrop" id="workModal">
   <div class="modal">
-    <h2>1차 성형·조립 공장 배분</h2>
-    <div id="s1TargetInfo" class="calc-box"></div>
+    <h2>공장 작업 배분 (화신 · 대성 · 하늘)</h2>
+    <div id="wTargetInfo" class="calc-box"></div>
     <div class="form-group">
       <label>작업 공장 선택</label>
       <div class="preset-grid-3" id="factoryPresets">
-        <button type="button" class="preset-btn active" onclick="selectBtn('factoryPresets', 's1Factory', '화신금속', this)">화신금속</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('factoryPresets', 's1Factory', '대성테크', this)">대성테크</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('factoryPresets', 's1Factory', '하늘테크', this)">하늘테크</button>
+        <button type="button" class="preset-btn active" onclick="selectBtn('factoryPresets', 'wFactory', '화신금속', this)">화신금속</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('factoryPresets', 'wFactory', '대성테크', this)">대성테크</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('factoryPresets', 'wFactory', '하늘테크', this)">하늘테크</button>
       </div>
-      <input type="hidden" id="s1Factory" value="화신금속" />
+      <input type="hidden" id="wFactory" value="화신금속" />
     </div>
     <div class="form-group">
-      <label>작업 공정 선택 (단중 자동 반영)</label>
+      <label>쌤스 / 공정 선택</label>
       <div class="preset-grid-4" id="procPresets">
-        <button type="button" class="preset-btn active" onclick="selectProc('로링', this)">로링</button>
-        <button type="button" class="preset-btn" onclick="selectProc('SP/W', this)">SP/W</button>
-        <button type="button" class="preset-btn" onclick="selectProc('S/W', this)">S/W</button>
-        <button type="button" class="preset-btn" onclick="selectProc('리벳', this)">리벳</button>
+        <button type="button" class="preset-btn active" onclick="selectBtn('procPresets', 'wProc', 'SP/W', this)">SP/W</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('procPresets', 'wProc', 'S/W', this)">S/W</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('procPresets', 'wProc', '로링', this)">로링</button>
+        <button type="button" class="preset-btn" onclick="selectBtn('procPresets', 'wProc', '리벳', this)">리벳</button>
       </div>
-      <input type="hidden" id="s1Proc" value="로링" />
+      <input type="text" id="wProc" value="SP/W" placeholder="직접 입력 가능" />
     </div>
-    <div class="row-2">
-      <div class="form-group">
-        <label>원소재 투입중량 (kg)</label>
-        <input type="number" id="s1InputKg" inputmode="numeric" oninput="recalcStep1()" />
-      </div>
-      <div class="form-group">
-        <label>조립 후 적용단중 (g)</label>
-        <input type="number" step="0.0001" id="s1UnitW" oninput="recalcStep1()" />
-      </div>
+    <div class="form-group">
+      <label>리벳 투입 중량 (kg)</label>
+      <input type="number" id="wInputKg" placeholder="예: 500" inputmode="numeric" />
     </div>
-    <div id="s1CalcPreview" class="calc-box" style="background:#eff6ff; border-color:#93c5fd;"></div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('step1Modal')">취소</button>
-      <button class="btn-submit" onclick="submitStep1()">공장 배분 저장</button>
+      <button class="btn-cancel" onclick="closeModal('workModal')">취소</button>
+      <button class="btn-submit" onclick="submitWork()">공장 배분 저장</button>
     </div>
   </div>
 </div>
 
-<!-- 모달 3: 1차 작업 완료 (실중량 입력 -> 로스/증감 계산) -->
-<div class="modal-backdrop" id="comp1Modal">
+<!-- 모달 3: 작업 완료 확인 (실중량 입력 -> 로스/와샤 증감 계산) -->
+<div class="modal-backdrop" id="compModal">
   <div class="modal">
-    <h2>1차 작업 완료 확인 (실중량 입력)</h2>
-    <div id="c1Info" class="calc-box"></div>
-    <input type="hidden" id="c1StepId" />
+    <h2>공장 작업 완료 등록</h2>
+    <div id="cInfo" class="calc-box"></div>
+    <input type="hidden" id="cWorkId" />
     <div class="form-group">
-      <label>공장에서 작업 완료된 실제 중량 (kg)</label>
-      <input type="number" step="0.1" id="c1ActualKg" inputmode="decimal" />
+      <label>작업 완료된 실제 중량 (kg) — 와샤 추가/로스 반영</label>
+      <input type="number" step="0.1" id="cActualKg" inputmode="decimal" />
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('comp1Modal')">취소</button>
-      <button class="btn-submit" style="background:#d97706;" onclick="submitComp1()">1차 작업완료 저장</button>
+      <button class="btn-cancel" onclick="closeModal('compModal')">취소</button>
+      <button class="btn-submit" style="background:#d97706;" onclick="submitComplete()">작업완료 저장</button>
     </div>
   </div>
 </div>
 
-<!-- 모달 4: 열처리 및 도금업체 이동 -->
-<div class="modal-backdrop" id="platingModal">
-  <div class="modal">
-    <h2>열처리 및 도금업체 이동</h2>
-    <div id="plInfo" class="calc-box"></div>
-    <input type="hidden" id="plStepId" />
-    <div class="form-group">
-      <label>후처리 / 도금 선택</label>
-      <div class="preset-grid-5" id="platingPresets">
-        <button type="button" class="preset-btn active" onclick="selectBtn('platingPresets', 'plType', 'NI', this)">NI</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('platingPresets', 'plType', '무전해', this)">무전해</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('platingPresets', 'plType', '산처리', this)">산처리</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('platingPresets', 'plType', '천연색', this)">천연색</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('platingPresets', 'plType', '기타', this)">기타</button>
-      </div>
-      <input type="text" id="plType" value="NI" />
-    </div>
-    <div class="form-group">
-      <label>도금/열처리 업체명 (선택)</label>
-      <input type="text" id="plVendor" placeholder="예: OO도금, XX열처리" />
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('platingModal')">취소</button>
-      <button class="btn-submit" style="background:#6d28d9;" onclick="submitPlating()">도금 이동 처리</button>
-    </div>
-  </div>
-</div>
-
-<!-- 모달 5: 최종 입고 확인 -->
-<div class="modal-backdrop" id="finalModal">
-  <div class="modal">
-    <h2>최종 입고 완료 등록</h2>
-    <div id="fnInfo" class="calc-box"></div>
-    <input type="hidden" id="fnStepId" />
-    <div class="form-group">
-      <label>최종 입고된 실제 중량 (kg)</label>
-      <input type="number" step="0.1" id="fnInKg" inputmode="decimal" />
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('finalModal')">취소</button>
-      <button class="btn-submit" style="background:#059669;" onclick="submitFinal()">최종 입고 확정</button>
-    </div>
-  </div>
-</div>
-
-<!-- 모달 6: 출고/포장 차감 -->
+<!-- 모달 4: 출고/이동 차감 -->
 <div class="modal-backdrop" id="deductModal">
   <div class="modal">
-    <h2>입고 재고 출고/포장 차감</h2>
+    <h2>완료 재고 출고/이동 차감</h2>
     <div id="deductTargetInfo" class="calc-box" style="background:#ecfdf5; border-color:#6ee7b7;"></div>
-    <input type="hidden" id="dStepId" />
+    <input type="hidden" id="dWorkId" />
     <div class="form-group">
       <label>이번에 빼갈 중량 (kg)</label>
       <input type="number" step="0.1" id="dUseKg" inputmode="decimal" />
@@ -405,24 +345,8 @@
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbxHUXkhbanp9-g9rjAleUGKHCm_OQQaLJPwdnz4t3wdHU1YoyFntRlPrOxmny-bJBzp/exec";
 
-  // 현화스너 유효경 & 와샤 단중(g) 기준표
-  const PITCH_DIA = {
-    '2': 1.75, '2.5': 2.15, '3': 2.7, '4': 3.45,
-    '5': 4.35, '6': 5.25, '8': 7.05, '10': 9.2
-  };
-  const WASHER_ADD_G = {
-    '2':   { 'S/W': 0.04, 'SP/W': 0.11 },
-    '2.5': { 'S/W': 0.07, 'SP/W': 0.18 },
-    '3':   { 'S/W': 0.11, 'SP/W': 0.28 },
-    '4':   { 'S/W': 0.23, 'SP/W': 0.62 },
-    '5':   { 'S/W': 0.42, 'SP/W': 1.05 },
-    '6':   { 'S/W': 0.72, 'SP/W': 1.85 },
-    '8':   { 'S/W': 1.65, 'SP/W': 4.10 },
-    '10':  { 'S/W': 3.20, 'SP/W': 7.80 }
-  };
-
   let allParents = [];
-  let allSteps = [];
+  let allWorks = [];
   let selectedParentId = null;
   let currentFilter = 'all';
   let currentDeductMax = 0;
@@ -431,25 +355,6 @@
     document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
     loadData();
   };
-
-  function parseSpec(specStr) {
-    const clean = String(specStr || '').toUpperCase().replace(/^M/, '').trim();
-    const parts = clean.split(/[*xX×]/);
-    if (parts.length < 2) return null;
-    const d = parseFloat(parts[0]);
-    const l = parseFloat(parts[1]);
-    if (isNaN(d) || isNaN(l)) return null;
-    return { d, dKey: String(d), l };
-  }
-
-  function calcBaseUnitWeight(specStr) {
-    const parsed = parseSpec(specStr);
-    if (!parsed) return 0;
-    const eff = PITCH_DIA[parsed.dKey] || (parsed.d * 0.88);
-    const totalLen = parsed.l + (parsed.d * 2); // 유두타입 머리밥 = 호칭 * 2
-    const w = eff * eff * 0.00617 * totalLen;
-    return Math.round(w * 10000) / 10000;
-  }
 
   function showLoading(msg) {
     const box = document.getElementById('loadingBox');
@@ -465,13 +370,13 @@
       const json = await res.json();
       if (json.status === 'success') {
         allParents = json.parents.reverse();
-        allSteps = json.steps || [];
+        allWorks = json.works || [];
         if (!selectedParentId && allParents.length > 0) selectedParentId = allParents[0].id;
         renderParents();
         renderDetail();
       }
     } catch (e) {
-      alert('데이터 로드 오류. Apps Script 배포를 확인해 주세요.');
+      alert('데이터 로드 오류. Apps Script 새 버전 배포를 확인해 주세요.');
     } finally {
       hideLoading();
     }
@@ -487,18 +392,18 @@
   function renderParents() {
     const container = document.getElementById('parentList');
     let filtered = allParents.map(p => {
-      const mySteps = allSteps.filter(s => s.parentId === p.id);
-      const allocatedKg = mySteps.reduce((sum, s) => sum + s.inputKg, 0);
+      const myWorks = allWorks.filter(w => w.parentId === p.id);
+      const allocatedKg = myWorks.reduce((sum, w) => sum + w.inputKg, 0);
       const remKg = Math.max(0, Math.round((p.totalKg - allocatedKg) * 10) / 10);
-      const hasWorking = mySteps.some(s => s.platingStatus !== '최종입고완료');
-      const inStockTotal = mySteps.reduce((sum, s) => s.platingStatus === '최종입고완료' ? sum + Math.max(0, s.finalInKg - s.usedKg) : sum, 0);
-      const hasFinalAny = mySteps.some(s => s.platingStatus === '최종입고완료');
-      return { ...p, allocatedKg, remKg, hasWorking, inStockTotal, hasFinalAny };
+      const hasWorking = myWorks.some(w => !w.done);
+      const doneStockTotal = myWorks.reduce((sum, w) => w.done ? sum + Math.max(0, w.actualKg - w.usedKg) : sum, 0);
+      const hasDoneAny = myWorks.some(w => w.done);
+      return { ...p, allocatedKg, remKg, hasWorking, doneStockTotal, hasDoneAny };
     });
 
     if (currentFilter === 'rem') filtered = filtered.filter(p => p.remKg > 0);
     else if (currentFilter === 'working') filtered = filtered.filter(p => p.hasWorking);
-    else if (currentFilter === 'instock') filtered = filtered.filter(p => p.inStockTotal > 0);
+    else if (currentFilter === 'done') filtered = filtered.filter(p => p.doneStockTotal > 0);
 
     document.getElementById('parentCount').textContent = filtered.length + '건';
     if (filtered.length === 0) {
@@ -512,17 +417,16 @@
         <div class="parent-card ${p.id === selectedParentId ? 'selected' : ''}" onclick="selectParent('${p.id}')">
           <div class="p-top">
             <div>
-              <span class="p-title">${p.item}</span>
+              <span class="p-title">${p.mat} ${p.head}</span>
               <span class="p-spec">${p.spec}</span>
             </div>
             <span style="font-size:12px; color:var(--muted);">${p.date}</span>
           </div>
-          <div class="p-sub-unit">단품단중: <b>${p.unitWeight}g</b> | 환산수량: <b>${Math.round(p.totalQty / 1000).toLocaleString()}천개</b></div>
           <div class="progress-wrap"><div class="progress-bar ${p.remKg <= 0 ? 'done' : ''}" style="width:${pct}%"></div></div>
           <div class="p-stats">
-            <span>발주 ${p.totalKg.toLocaleString()}kg (투입 ${p.allocatedKg.toLocaleString()}kg)</span>
-            <span class="stat-rem ${p.remKg <= 0 ? 'zero' : ''}">${p.remKg > 0 ? '미투입 ' + p.remKg.toLocaleString() + 'kg' : '✔ 전량 투입완료'}</span>
-            ${p.hasFinalAny ? `<div class="stat-instock">📦 최종입고 남은잔량: ${Math.round(p.inStockTotal * 10)/10} kg</div>` : ''}
+            <span>발주 ${p.totalKg.toLocaleString()}kg (배분 ${p.allocatedKg.toLocaleString()}kg)</span>
+            <span class="stat-rem ${p.remKg <= 0 ? 'zero' : ''}">${p.remKg > 0 ? '미배분 리벳 ' + p.remKg.toLocaleString() + 'kg' : '✔ 전량 배분완료'}</span>
+            ${p.hasDoneAny ? `<div class="stat-factory-rem">📦 공장 작업완료 남은잔량: ${Math.round(p.doneStockTotal * 10)/10} kg</div>` : ''}
           </div>
         </div>
       `;
@@ -542,66 +446,58 @@
       area.innerHTML = '<div class="empty-msg">왼쪽에서 품목을 선택해 주세요.</div>';
       return;
     }
-    const mySteps = allSteps.filter(s => s.parentId === p.id);
-    const allocatedKg = mySteps.reduce((sum, s) => sum + s.inputKg, 0);
+    const myWorks = allWorks.filter(w => w.parentId === p.id);
+    const allocatedKg = myWorks.reduce((sum, w) => sum + w.inputKg, 0);
     const remKg = Math.max(0, Math.round((p.totalKg - allocatedKg) * 10) / 10);
 
-    const stepsHtml = mySteps.length === 0
-      ? '<div class="empty-msg">아직 공장에 배분된 내역이 없습니다.<br>위 버튼을 눌러 화신·대성·하늘 공장에 작업을 배분하세요.</div>'
-      : mySteps.map(s => {
-          const isFinal = s.platingStatus === '최종입고완료';
-          const isPlating = s.platingStatus === '열처리/도금중';
-          const remainKg = Math.max(0, Math.round((s.finalInKg - s.usedKg) * 10) / 10);
-          const remainQtyK = s.unitWeight > 0 ? Math.round((remainKg * 1000 / s.unitWeight) / 1000) : 0;
-          const isExhausted = isFinal && remainKg === 0;
-
-          // 중량 증감 계산
-          const expectedAfterProcKg = Math.round((s.qty * s.unitWeight / 1000) * 10) / 10;
-          const diff1 = s.step1Done ? Math.round((s.step1ActualKg - expectedAfterProcKg) * 10) / 10 : 0;
-          const diff2 = isFinal ? Math.round((s.finalInKg - s.step1ActualKg) * 10) / 10 : 0;
+    const worksHtml = myWorks.length === 0
+      ? '<div class="empty-msg">아직 공장에 배분된 작업이 없습니다.<br>위 버튼을 눌러 화신 · 대성 · 하늘 공장에 배분하세요.</div>'
+      : myWorks.map(w => {
+          const remainKg = Math.max(0, Math.round((w.actualKg - w.usedKg) * 10) / 10);
+          const isExhausted = w.done && remainKg === 0;
+          const diff = w.done ? Math.round((w.actualKg - w.inputKg) * 10) / 10 : 0;
 
           let actionBtns = '';
-          if (!s.step1Done) {
-            actionBtns = `<button class="act-btn btn-step1" onclick="openComp1Modal('${s.id}')">✔ 1차 작업완료(실중량 입력)</button>`;
-          } else if (!isPlating && !isFinal) {
-            actionBtns = `<button class="act-btn btn-plating" onclick="openPlatingModal('${s.id}')">➔ 열처리/도금 이동</button>`;
-          } else if (isPlating) {
-            actionBtns = `<button class="act-btn btn-final" onclick="openFinalModal('${s.id}')">✔ 최종 입고확인</button>`;
-          } else if (isFinal && remainKg > 0) {
-            actionBtns = `<button class="act-btn btn-deduct" onclick="openDeductModal('${s.id}')">- 출고/포장 차감</button>`;
+          if (!w.done) {
+            actionBtns = `<button class="act-btn btn-complete" onclick="openCompModal('${w.id}')">✔ 작업완료 (실중량 입력)</button>`;
+          } else if (remainKg > 0) {
+            actionBtns = `<button class="act-btn btn-deduct" onclick="openDeductModal('${w.id}')">- 출고/이동 차감</button>`;
           }
 
           return `
-            <div class="step-card ${isExhausted ? 'status-exhausted' : (isFinal ? 'status-done' : (isPlating ? 'status-plating' : ''))}">
-              <div class="s-top">
+            <div class="work-card ${isExhausted ? 'exhausted' : (w.done ? 'done' : '')}">
+              <div class="w-top">
                 <div>
-                  <span class="badge b-factory">${s.factory}</span>
-                  <span class="badge b-proc">${s.process} (${s.unitWeight}g)</span>
-                  ${s.plating ? `<span class="badge b-plating">${s.plating}${s.platingVendor ? ' · ' + s.platingVendor : ''}</span>` : ''}
+                  <span class="badge b-factory">${w.factory}</span>
+                  <span class="badge b-proc">${w.process}</span>
                 </div>
-                <span class="badge b-status ${isFinal ? 'done' : ''}">${s.platingStatus}</span>
+                <span class="badge b-status ${w.done ? 'done' : ''}">${w.done ? '작업완료' : '작업중'}</span>
               </div>
-              <div class="s-body">
-                • 원소재 투입: <b>${s.inputKg.toLocaleString()}kg</b> → 작업수량: <b>${Math.round(s.qty / 1000).toLocaleString()}천개</b> (이론중량 ${expectedAfterProcKg}kg)<br>
-                ${s.step1Done ? `• 1차 완료 실중량: <b>${s.step1ActualKg}kg</b> (<span class="${diff1 >= 0 ? 'diff-plus' : 'diff-minus'}">${diff1 >= 0 ? '+' + diff1 : diff1}kg</span>)<br>` : ''}
-                ${isFinal ? `• 최종 입고(${s.inDate}): <b>${s.finalInKg}kg</b> (도금차이 <span class="${diff2 >= 0 ? 'diff-plus' : 'diff-minus'}">${diff2 >= 0 ? '+' + diff2 : diff2}kg</span>)<br>` : ''}
-                ${isFinal ? `<span class="remain-pill ${isExhausted ? 'zero' : ''}">남은잔량: ${remainKg} kg (약 ${remainQtyK.toLocaleString()}천개) ${isExhausted ? '[소진완료]' : ''}</span>` : ''}
+              <div class="w-body">
+                • 리벳 투입중량: <b>${w.inputKg.toLocaleString()} kg</b><br>
+                ${w.done 
+                  ? `• 완료 실중량(${w.doneDate}): <b>${w.actualKg.toLocaleString()} kg</b> (<span class="${diff >= 0 ? 'diff-plus' : 'diff-minus'}">${diff >= 0 ? '+' + diff : diff}kg</span>)<br>
+                     <span class="remain-pill ${isExhausted ? 'zero' : ''}">남은잔량: ${remainKg} kg ${isExhausted ? '[소진완료]' : ''}</span>` 
+                  : '⏳ 공장에서 작업 진행중'
+                }
               </div>
-              <div class="s-actions">${actionBtns}</div>
+              <div class="w-actions">${actionBtns}</div>
             </div>
           `;
         }).join('');
 
     area.innerHTML = `
       <div class="detail-header">
-        <h3>${p.item} <span class="p-spec">${p.spec}</span></h3>
+        <h3>${p.mat} ${p.head} <span class="p-spec">${p.spec}</span></h3>
         <div class="detail-sub">
-          원소재 발주: <b>${p.totalKg.toLocaleString()}kg</b> (단품단중 ${p.unitWeight}g / 약 ${Math.round(p.totalQty/1000).toLocaleString()}천개)<br>
-          공장 투입합계: <b>${allocatedKg.toLocaleString()}kg</b> | 미투입 잔량: <b style="color:${remKg > 0 ? 'var(--warn)' : 'var(--accent)'};">${remKg.toLocaleString()}kg</b>
+          총 리벳발주: <b>${p.totalKg.toLocaleString()}kg</b> | 
+          배분합계: <b>${allocatedKg.toLocaleString()}kg</b> | 
+          미배분 리벳잔량: <b style="color:${remKg > 0 ? 'var(--warn)' : 'var(--accent)'};">${remKg.toLocaleString()}kg</b>
+          ${p.note ? '<br>비고: ' + p.note : ''}
         </div>
       </div>
-      <button class="btn-split" onclick="openStep1Modal(${remKg})">+ 1차 성형·조립 공장 배분 (화신 / 대성 / 하늘)</button>
-      <div>${stepsHtml}</div>
+      <button class="btn-split" onclick="openWorkModal(${remKg})">+ 공장 작업 배분 추가 (화신 · 대성 · 하늘)</button>
+      <div>${worksHtml}</div>
     `;
   }
 
@@ -613,24 +509,9 @@
     else { input.value = val; }
   }
 
-  // 모달 1: 단중 자동 계산
-  function recalcParentUnit() {
-    const spec = document.getElementById('pSpec').value;
-    const w = calcBaseUnitWeight(spec);
-    if (w > 0) document.getElementById('pUnitW').value = w;
-    recalcParentQtyOnly();
-  }
-  function recalcParentQtyOnly() {
-    const kg = Number(document.getElementById('pKg').value) || 0;
-    const w = Number(document.getElementById('pUnitW').value) || 0;
-    const qty = w > 0 ? Math.round((kg * 1000) / w) : 0;
-    document.getElementById('pQtyPreview').value = qty > 0 ? Math.round(qty / 1000).toLocaleString() + ' 천개 (' + qty.toLocaleString() + '개)' : '-';
-  }
   function openParentModal() {
     document.getElementById('pSpec').value = '';
     document.getElementById('pKg').value = '';
-    document.getElementById('pUnitW').value = '';
-    document.getElementById('pQtyPreview').value = '';
     document.getElementById('pNote').value = '';
     document.getElementById('parentModal').classList.add('open');
   }
@@ -640,158 +521,83 @@
     const head = document.getElementById('pHead').value.trim();
     const spec = document.getElementById('pSpec').value.trim();
     const totalKg = Number(document.getElementById('pKg').value);
-    const unitWeight = Number(document.getElementById('pUnitW').value);
     const note = document.getElementById('pNote').value.trim();
-    if (!mat || !head || !spec || !totalKg || !unitWeight) { alert('모든 필수 항목과 단중을 확인해 주세요.'); return; }
-    const totalQty = Math.round((totalKg * 1000) / unitWeight);
+    if (!mat || !head || !spec || !totalKg || totalKg <= 0) { alert('재질, 머리모양, 규격, 발주 중량을 입력해 주세요.'); return; }
     closeModal('parentModal');
     showLoading('발주 등록 중...');
     try {
       const res = await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'addParent', date, item: `${mat} ${head}`, spec, unitWeight, totalKg, totalQty, note })
+        body: JSON.stringify({ action: 'addParent', date, mat, head, spec, totalKg, note })
       });
       const json = await res.json();
       if (json.status === 'success') { selectedParentId = json.id; await loadData(); }
     } finally { hideLoading(); }
   }
 
-  // 모달 2: 1차 공장 배분
-  function openStep1Modal(remKg) {
+  function openWorkModal(remKg) {
     const p = allParents.find(item => item.id === selectedParentId);
     if (!p) return;
-    document.getElementById('s1TargetInfo').innerHTML = `<b>${p.item} (${p.spec})</b><br>단품단중: ${p.unitWeight}g | 미투입 잔량: <b>${remKg}kg</b>`;
-    document.getElementById('s1InputKg').value = remKg > 0 ? remKg : '';
-    selectProc('로링', document.querySelector('#procPresets .preset-btn'));
-    document.getElementById('step1Modal').classList.add('open');
+    document.getElementById('wTargetInfo').innerHTML = `<b>${p.mat} ${p.head} (${p.spec})</b><br>미배분 리벳잔량: <b>${remKg} kg</b>`;
+    document.getElementById('wInputKg').value = remKg > 0 ? remKg : '';
+    document.getElementById('workModal').classList.add('open');
   }
-  function selectProc(proc, btn) {
-    document.querySelectorAll('#procPresets .preset-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('s1Proc').value = proc;
+  async function submitWork() {
     const p = allParents.find(item => item.id === selectedParentId);
-    if (!p) return;
-    const parsed = parseSpec(p.spec);
-    let addW = 0;
-    if (parsed && WASHER_ADD_G[parsed.dKey] && WASHER_ADD_G[parsed.dKey][proc]) {
-      addW = WASHER_ADD_G[parsed.dKey][proc];
-    }
-    document.getElementById('s1UnitW').value = Math.round((p.unitWeight + addW) * 10000) / 10000;
-    recalcStep1();
-  }
-  function recalcStep1() {
-    const p = allParents.find(item => item.id === selectedParentId);
-    if (!p) return;
-    const inKg = Number(document.getElementById('s1InputKg').value) || 0;
-    const newW = Number(document.getElementById('s1UnitW').value) || p.unitWeight;
-    const qty = p.unitWeight > 0 ? Math.round((inKg * 1000) / p.unitWeight) : 0;
-    const afterKg = Math.round((qty * newW / 1000) * 10) / 10;
-    document.getElementById('s1CalcPreview').innerHTML =
-      `• 생산 예상수량: <b>${Math.round(qty/1000).toLocaleString()}천개</b> (${qty.toLocaleString()}개)<br>` +
-      `• 와샤/공정 적용 후 이론중량: <b>${afterKg} kg</b> (원소재 대비 ${afterKg >= inKg ? '+' + Math.round((afterKg-inKg)*10)/10 : Math.round((afterKg-inKg)*10)/10}kg)`;
-  }
-  async function submitStep1() {
-    const p = allParents.find(item => item.id === selectedParentId);
-    const factory = document.getElementById('s1Factory').value;
-    const process = document.getElementById('s1Proc').value;
-    const inputKg = Number(document.getElementById('s1InputKg').value);
-    const unitWeight = Number(document.getElementById('s1UnitW').value);
-    if (!inputKg || inputKg <= 0) { alert('투입 중량을 입력해 주세요.'); return; }
-    const qty = Math.round((inputKg * 1000) / p.unitWeight);
-    closeModal('step1Modal');
-    showLoading('공장 배분 저장 중...');
+    const factory = document.getElementById('wFactory').value;
+    const process = document.getElementById('wProc').value.trim();
+    const inputKg = Number(document.getElementById('wInputKg').value);
+    if (!process || !inputKg || inputKg <= 0) { alert('공정과 투입 중량을 입력해 주세요.'); return; }
+    closeModal('workModal');
+    showLoading('배분 저장 중...');
     try {
       await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'addStep1', parentId: p.id, factory, process, unitWeight, inputKg, qty })
+        body: JSON.stringify({ action: 'addWork', parentId: p.id, factory, process, inputKg })
       });
       await loadData();
     } finally { hideLoading(); }
   }
 
-  // 모달 3: 1차 작업완료
-  function openComp1Modal(stepId) {
-    const s = allSteps.find(item => item.id === stepId);
-    const theoryKg = Math.round((s.qty * s.unitWeight / 1000) * 10) / 10;
-    document.getElementById('c1StepId').value = stepId;
-    document.getElementById('c1Info').innerHTML = `<b>${s.factory} - ${s.process}</b><br>이론 예상중량: <b>${theoryKg} kg</b> (${Math.round(s.qty/1000).toLocaleString()}천개)`;
-    document.getElementById('c1ActualKg').value = theoryKg;
-    document.getElementById('comp1Modal').classList.add('open');
+  function openCompModal(workId) {
+    const w = allWorks.find(item => item.id === workId);
+    document.getElementById('cWorkId').value = workId;
+    document.getElementById('cInfo').innerHTML = `<b>${w.factory} - ${w.process}</b><br>리벳 투입중량: <b>${w.inputKg} kg</b>`;
+    document.getElementById('cActualKg').value = w.inputKg;
+    document.getElementById('compModal').classList.add('open');
   }
-  async function submitComp1() {
-    const stepId = document.getElementById('c1StepId').value;
-    const actualKg = Number(document.getElementById('c1ActualKg').value);
-    if (!actualKg || actualKg <= 0) { alert('실제 완료 중량을 입력해 주세요.'); return; }
-    closeModal('comp1Modal');
-    showLoading('1차 완료 저장 중...');
+  async function submitComplete() {
+    const workId = document.getElementById('cWorkId').value;
+    const actualKg = Number(document.getElementById('cActualKg').value);
+    if (!actualKg || actualKg <= 0) { alert('완료된 실제 중량을 입력해 주세요.'); return; }
+    closeModal('compModal');
+    showLoading('완료 저장 중...');
     try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'completeStep1', stepId, actualKg }) });
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'completeWork', workId, actualKg }) });
       await loadData();
     } finally { hideLoading(); }
   }
 
-  // 모달 4: 열처리/도금 이동
-  function openPlatingModal(stepId) {
-    const s = allSteps.find(item => item.id === stepId);
-    document.getElementById('plStepId').value = stepId;
-    document.getElementById('plInfo').innerHTML = `<b>${s.factory} (${s.process}) 완료분</b><br>이동 중량: <b>${s.step1ActualKg} kg</b> / 수량: <b>${Math.round(s.qty/1000).toLocaleString()}천개</b>`;
-    document.getElementById('plVendor').value = '';
-    document.getElementById('platingModal').classList.add('open');
-  }
-  async function submitPlating() {
-    const stepId = document.getElementById('plStepId').value;
-    const plating = document.getElementById('plType').value.trim();
-    const platingVendor = document.getElementById('plVendor').value.trim();
-    if (!plating) { alert('후처리 종류를 입력해 주세요.'); return; }
-    closeModal('platingModal');
-    showLoading('도금 이동 저장 중...');
-    try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'sendPlating', stepId, plating, platingVendor }) });
-      await loadData();
-    } finally { hideLoading(); }
-  }
-
-  // 모달 5: 최종 입고
-  function openFinalModal(stepId) {
-    const s = allSteps.find(item => item.id === stepId);
-    document.getElementById('fnStepId').value = stepId;
-    document.getElementById('fnInfo').innerHTML = `<b>${s.plating} (${s.platingVendor || '도금업체'}) 완료</b><br>도금 전 중량: <b>${s.step1ActualKg} kg</b> (${Math.round(s.qty/1000).toLocaleString()}천개)`;
-    document.getElementById('fnInKg').value = s.step1ActualKg;
-    document.getElementById('finalModal').classList.add('open');
-  }
-  async function submitFinal() {
-    const stepId = document.getElementById('fnStepId').value;
-    const finalInKg = Number(document.getElementById('fnInKg').value);
-    if (!finalInKg || finalInKg <= 0) { alert('최종 입고 중량을 입력해 주세요.'); return; }
-    closeModal('finalModal');
-    showLoading('최종 입고 저장 중...');
-    try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'finalReceive', stepId, finalInKg }) });
-      await loadData();
-    } finally { hideLoading(); }
-  }
-
-  // 모달 6: 출고 차감
-  function openDeductModal(stepId) {
-    const s = allSteps.find(item => item.id === stepId);
-    const remain = Math.max(0, Math.round((s.finalInKg - s.usedKg) * 10) / 10);
+  function openDeductModal(workId) {
+    const w = allWorks.find(item => item.id === workId);
+    const remain = Math.max(0, Math.round((w.actualKg - w.usedKg) * 10) / 10);
     currentDeductMax = remain;
-    document.getElementById('dStepId').value = stepId;
-    document.getElementById('deductTargetInfo').innerHTML = `<b>${s.factory} · ${s.process} · ${s.plating}</b><br>현재 남은잔량: <b>${remain} kg</b>`;
+    document.getElementById('dWorkId').value = workId;
+    document.getElementById('deductTargetInfo').innerHTML = `<b>${w.factory} · ${w.process}</b><br>현재 남은잔량: <b>${remain} kg</b>`;
     document.getElementById('dUseKg').value = '';
     document.getElementById('deductModal').classList.add('open');
   }
   function setAllDeduct() { document.getElementById('dUseKg').value = currentDeductMax; }
   async function submitDeduct() {
-    const stepId = document.getElementById('dStepId').value;
+    const workId = document.getElementById('dWorkId').value;
     const addUse = Number(document.getElementById('dUseKg').value);
     if (!addUse || addUse <= 0) { alert('차감할 중량을 입력해 주세요.'); return; }
-    const target = allSteps.find(item => item.id === stepId);
-    const nextUsedKg = Math.min(target.finalInKg, Math.round((target.usedKg + addUse) * 10) / 10);
+    const target = allWorks.find(item => item.id === workId);
+    const nextUsedKg = Math.min(target.actualKg, Math.round((target.usedKg + addUse) * 10) / 10);
     closeModal('deductModal');
-    showLoading('출고 차감 저장 중...');
+    showLoading('차감 저장 중...');
     try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateUsedKg', stepId, usedKg: nextUsedKg }) });
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateUsedKg', workId, usedKg: nextUsedKg }) });
       await loadData();
     } finally { hideLoading(); }
   }

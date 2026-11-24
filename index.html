@@ -235,21 +235,22 @@
       <input type="text" id="pMat" value="SCM" />
     </div>
     <div class="form-group">
-      <label>머리모양 선택 (클릭)</label>
+      <label>머리모양 선택 (단중 공식 자동 전환)</label>
       <div class="preset-grid-4" id="headPresets">
-        <button type="button" class="preset-btn active" onclick="selectBtn('headPresets', 'pHead', '유두렌지', this)">유두렌지</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라렌지', this)">사라렌지</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루렌지', this)">마루렌지</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루별', this)">마루별</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '마루핀별', this)">마루핀별</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라별', this)">사라별</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '사라핀별', this)">사라핀별</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'P+', this)">P+</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'F+', this)">F+</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', 'B+', this)">B+</button>
-        <button type="button" class="preset-btn" onclick="selectBtn('headPresets', 'pHead', '기타', this)">기타</button>
+        <button type="button" class="preset-btn active" onclick="selectHead('유두렌지', this)">유두렌지</button>
+        <button type="button" class="preset-btn" onclick="selectHead('사라렌지', this)">사라렌지</button>
+        <button type="button" class="preset-btn" onclick="selectHead('마루렌지', this)">마루렌지</button>
+        <button type="button" class="preset-btn" onclick="selectHead('마루별', this)">마루별</button>
+        <button type="button" class="preset-btn" onclick="selectHead('마루핀별', this)">마루핀별</button>
+        <button type="button" class="preset-btn" onclick="selectHead('사라별', this)">사라별</button>
+        <button type="button" class="preset-btn" onclick="selectHead('사라핀별', this)">사라핀별</button>
+        <button type="button" class="preset-btn" onclick="selectHead('P+', this)">P+</button>
+        <button type="button" class="preset-btn" onclick="selectHead('F+', this)">F+</button>
+        <button type="button" class="preset-btn" onclick="selectHead('B+', this)">B+</button>
+        <button type="button" class="preset-btn" onclick="selectHead('T+', this)">T+</button>
+        <button type="button" class="preset-btn" onclick="selectHead('기타', this)">기타</button>
       </div>
-      <input type="text" id="pHead" value="유두렌지" placeholder="머리모양 직접 입력 가능" />
+      <input type="text" id="pHead" value="유두렌지" oninput="recalcParentUnit()" placeholder="머리모양 직접 입력 가능" />
     </div>
     <div class="row-2">
       <div class="form-group">
@@ -382,6 +383,11 @@
     '10':  { pw: 4.3691, sw: 2.5808 }
   };
 
+  // P+ 호칭별 실측 머리밥 길이(mm) 역산값
+  const P_PLUS_ALLOWANCE = {
+    '2': 3.0, '2.5': 3.8, '3': 4.5, '4': 6.9, '5': 9.6, '6': 10.3, '8': 14.0, '10': 17.5
+  };
+
   let allParents = [];
   let allWorks = [];
   let selectedParentId = null;
@@ -403,11 +409,22 @@
     return { d, dKey: String(d), l };
   }
 
-  function calcBaseUnitWeight(specStr) {
+  function calcBaseUnitWeight(specStr, headType) {
     const parsed = parseSpec(specStr);
     if (!parsed) return 0;
     const eff = PITCH_DIA[parsed.dKey] || (parsed.d * 0.88);
-    const totalLen = parsed.l + (parsed.d * 2);
+    const h = String(headType || '').trim();
+
+    let headAllowance = parsed.d * 2; // 기본: 유두렌지, 마루렌지, 마루별, 마루핀별
+    if (h.includes('사라') || h === 'F+') {
+      headAllowance = (parsed.d * 2) - 1; // 사라류: 호칭*2 - 1
+    } else if (h === 'P+' || h === 'B+') {
+      headAllowance = P_PLUS_ALLOWANCE[parsed.dKey] || (parsed.d * 1.8);
+    } else if (h === 'T+') {
+      headAllowance = parsed.d * 2.7; // T+ 실측 5*22=4.142 역산값
+    }
+
+    const totalLen = parsed.l + headAllowance;
     const w = eff * eff * 0.00617 * totalLen;
     return Math.round(w * 10000) / 10000;
   }
@@ -569,9 +586,23 @@
     else { input.value = val; }
   }
 
+  function selectHead(val, btn) {
+    document.querySelectorAll('#headPresets .preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const input = document.getElementById('pHead');
+    if (val === '기타') {
+      input.value = '';
+      input.focus();
+    } else {
+      input.value = val;
+      recalcParentUnit();
+    }
+  }
+
   function recalcParentUnit() {
     const spec = document.getElementById('pSpec').value;
-    const w = calcBaseUnitWeight(spec);
+    const head = document.getElementById('pHead').value;
+    const w = calcBaseUnitWeight(spec, head);
     if (w > 0) document.getElementById('pUnitW').value = w;
     recalcParentQtyOnly();
   }

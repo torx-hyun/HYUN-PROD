@@ -97,8 +97,18 @@
       background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
       padding: 12px; margin-bottom: 12px;
     }
-    .detail-header h3 { margin: 0 0 5px 0; font-size: 16px; }
+    .detail-top-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .detail-header h3 { margin: 0; font-size: 16px; }
     .detail-sub { font-size: 13px; color: #334155; line-height: 1.55; }
+
+    .btn-edit-unit {
+      background: #fff; border: 1px solid #94a3b8; color: #1e293b;
+      padding: 5px 9px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-edit-unit:hover { background: #f1f5f9; border-color: #475569; }
 
     .btn-split {
       width: 100%; background: var(--primary); color: #fff; border: none;
@@ -360,18 +370,34 @@
   </div>
 </div>
 
+<!-- 모달 5: 수동 단중 수정 (포장 실측 반영) -->
+<div class="modal-backdrop" id="editUnitModal">
+  <div class="modal">
+    <h2>실측 단중 수동 수정</h2>
+    <div id="euInfo" class="calc-box" style="background:#fffbeb; border-color:#fcd34d;"></div>
+    <input type="hidden" id="euType" />
+    <input type="hidden" id="euTargetId" />
+    <div class="form-group">
+      <label>실측 단중 (g) — 소수점 4자리까지 입력</label>
+      <input type="number" step="0.0001" id="euNewUnitW" inputmode="decimal" placeholder="예: 0.7350" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('editUnitModal')">취소</button>
+      <button class="btn-submit" onclick="submitEditUnit()">단중 수정 저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="loading" id="loadingBox">처리 중...</div>
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbxHUXkhbanp9-g9rjAleUGKHCm_OQQaLJPwdnz4t3wdHU1YoyFntRlPrOxmny-bJBzp/exec";
 
-  // 현화스너 유효경 매핑
   const PITCH_DIA = {
     '2': 1.75, '2.5': 2.15, '3': 2.7, '4': 3.45,
     '5': 4.35, '6': 5.25, '8': 7.05, '10': 9.2
   };
 
-  // 현화스너 평와샤(pw) & 스프링와샤(sw) 실측 단중(g)
   const WASHER_WEIGHT = {
     '2':   { pw: 0.0397, sw: 0.0363 },
     '2.5': { pw: 0.0614, sw: 0.0526 },
@@ -383,7 +409,6 @@
     '10':  { pw: 4.3691, sw: 2.5808 }
   };
 
-  // P+ 호칭별 실측 머리밥 길이(mm) 역산값
   const P_PLUS_ALLOWANCE = {
     '2': 3.0, '2.5': 3.8, '3': 4.5, '4': 6.9, '5': 9.6, '6': 10.3, '8': 14.0, '10': 17.5
   };
@@ -415,13 +440,13 @@
     const eff = PITCH_DIA[parsed.dKey] || (parsed.d * 0.88);
     const h = String(headType || '').trim();
 
-    let headAllowance = parsed.d * 2; // 기본: 유두렌지, 마루렌지, 마루별, 마루핀별
+    let headAllowance = parsed.d * 2;
     if (h.includes('사라') || h === 'F+') {
-      headAllowance = (parsed.d * 2) - 1; // 사라류: 호칭*2 - 1
+      headAllowance = (parsed.d * 2) - 1;
     } else if (h === 'P+' || h === 'B+') {
       headAllowance = P_PLUS_ALLOWANCE[parsed.dKey] || (parsed.d * 1.8);
     } else if (h === 'T+') {
-      headAllowance = parsed.d * 2.7; // T+ 실측 5*22=4.142 역산값
+      headAllowance = parsed.d * 2.7;
     }
 
     const totalLen = parsed.l + headAllowance;
@@ -487,6 +512,7 @@
 
     container.innerHTML = filtered.map(p => {
       const pct = p.totalKg > 0 ? Math.min(100, Math.round((p.allocatedKg / p.totalKg) * 100)) : 0;
+      const totalQtyK = p.unitWeight > 0 ? Math.round((p.totalKg * 1000 / p.unitWeight) / 1000) : 0;
       return `
         <div class="parent-card ${p.id === selectedParentId ? 'selected' : ''}" onclick="selectParent('${p.id}')">
           <div class="p-top">
@@ -496,7 +522,7 @@
             </div>
             <span style="font-size:12px; color:var(--muted);">${p.date}</span>
           </div>
-          <div class="p-sub-unit">리벳단중: <b>${p.unitWeight}g</b> | 총수량: <b>${Math.round(p.totalQty / 1000).toLocaleString()}천개</b></div>
+          <div class="p-sub-unit">리벳단중: <b>${p.unitWeight}g</b> | 총수량: <b>${totalQtyK.toLocaleString()}천개</b></div>
           <div class="progress-wrap"><div class="progress-bar ${p.remKg <= 0 ? 'done' : ''}" style="width:${pct}%"></div></div>
           <div class="p-stats">
             <span>발주 ${p.totalKg.toLocaleString()}kg (배분 ${p.allocatedKg.toLocaleString()}kg)</span>
@@ -524,6 +550,7 @@
     const myWorks = allWorks.filter(w => w.parentId === p.id);
     const allocatedKg = myWorks.reduce((sum, w) => sum + w.inputKg, 0);
     const remKg = Math.max(0, Math.round((p.totalKg - allocatedKg) * 10) / 10);
+    const totalQtyK = p.unitWeight > 0 ? Math.round((p.totalKg * 1000 / p.unitWeight) / 1000) : 0;
     const remQtyK = p.unitWeight > 0 ? Math.round((remKg * 1000 / p.unitWeight) / 1000) : 0;
 
     const worksHtml = myWorks.length === 0
@@ -537,10 +564,11 @@
 
           let actionBtns = '';
           if (!w.done) {
-            actionBtns = `<button class="act-btn btn-complete" onclick="openCompModal('${w.id}')">✔ 작업완료 (실중량 입력)</button>`;
+            actionBtns += `<button class="act-btn btn-complete" onclick="openCompModal('${w.id}')">✔ 작업완료 (실중량 입력)</button>`;
           } else if (remainKg > 0) {
-            actionBtns = `<button class="act-btn btn-deduct" onclick="openDeductModal('${w.id}')">- 출고/이동 차감</button>`;
+            actionBtns += `<button class="act-btn btn-deduct" onclick="openDeductModal('${w.id}')">- 출고/이동 차감</button>`;
           }
+          actionBtns += `<button class="btn-edit-unit" onclick="openEditUnitModal('work', '${w.id}')">✎ 단중수정</button>`;
 
           return `
             <div class="work-card ${isExhausted ? 'exhausted' : (w.done ? 'done' : '')}">
@@ -566,9 +594,12 @@
 
     area.innerHTML = `
       <div class="detail-header">
-        <h3>${p.mat} ${p.head} <span class="p-spec">${p.spec}</span></h3>
+        <div class="detail-top-row">
+          <h3>${p.mat} ${p.head} <span class="p-spec">${p.spec}</span></h3>
+          <button class="btn-edit-unit" onclick="openEditUnitModal('parent', '${p.id}')">✎ 리벳단중 수정</button>
+        </div>
         <div class="detail-sub">
-          총 리벳발주: <b>${p.totalKg.toLocaleString()}kg</b> (단중 ${p.unitWeight}g / 약 ${Math.round(p.totalQty/1000).toLocaleString()}천개)<br>
+          총 리벳발주: <b>${p.totalKg.toLocaleString()}kg</b> (단중 <b>${p.unitWeight}g</b> / 약 ${totalQtyK.toLocaleString()}천개)<br>
           배분합계: <b>${allocatedKg.toLocaleString()}kg</b> | 미배분 리벳잔량: <b style="color:${remKg > 0 ? 'var(--warn)' : 'var(--accent)'};">${remKg.toLocaleString()}kg (약 ${remQtyK.toLocaleString()}천개)</b>
           ${p.note ? '<br>비고: ' + p.note : ''}
         </div>
@@ -743,6 +774,54 @@
       await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateUsedKg', workId, usedKg: nextUsedKg }) });
       await loadData();
     } finally { hideLoading(); }
+  }
+
+  // 모달 5: 단중 수동 수정
+  function openEditUnitModal(type, targetId) {
+    document.getElementById('euType').value = type;
+    document.getElementById('euTargetId').value = targetId;
+    if (type === 'parent') {
+      const p = allParents.find(item => item.id === targetId);
+      if (!p) return;
+      document.getElementById('euInfo').innerHTML = `<b>[리벳 단품 단중 수정]</b> ${p.mat} ${p.head} (${p.spec})<br>기존 단중: <b>${p.unitWeight} g</b>`;
+      document.getElementById('euNewUnitW').value = p.unitWeight;
+    } else {
+      const w = allWorks.find(item => item.id === targetId);
+      if (!w) return;
+      document.getElementById('euInfo').innerHTML = `<b>[공장 작업 단중 수정]</b> ${w.factory} · ${w.process}<br>기존 적용단중: <b>${w.unitWeight} g</b>`;
+      document.getElementById('euNewUnitW').value = w.unitWeight;
+    }
+    document.getElementById('editUnitModal').classList.add('open');
+  }
+
+  async function submitEditUnit() {
+    const type = document.getElementById('euType').value;
+    const targetId = document.getElementById('euTargetId').value;
+    const unitWeight = Number(document.getElementById('euNewUnitW').value);
+    if (!unitWeight || unitWeight <= 0) {
+      alert('올바른 단중(g)을 입력해 주세요.');
+      return;
+    }
+    closeModal('editUnitModal');
+    showLoading('실측 단중 저장 중...');
+    try {
+      if (type === 'parent') {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'updateParentUnit', parentId: targetId, unitWeight })
+        });
+      } else {
+        await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'updateWorkUnit', workId: targetId, unitWeight })
+        });
+      }
+      await loadData();
+    } catch (e) {
+      alert('단중 수정 저장 중 오류가 발생했습니다.');
+    } finally {
+      hideLoading();
+    }
   }
 
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
